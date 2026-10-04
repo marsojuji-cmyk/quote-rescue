@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quote Rescue Studio</title>
+<style>
+  :root {
+    --ink: #1c1915;
+    --ivory: #f3eee4;
+    --paper: #fbf7f0;
+    --rule: #d8cebf;
+    --black: #12110f;
+    --inspector: #161513;
+    --inspector-ink: #ebe6dc;
+    --quiet: #6f675c;
+    --forest: #1e4d38;
+    --forest-ink: #e7f2eb;
+    --mint: #8fbfa4;
+    --ochre: #8a5a12;
+    --ochre-bg: #f4e6cf;
+    --brick: #6e2c24;
+    --brick-bg: #f6e6e1;
+    --sans: "Avenir Next", "Segoe UI", "Gill Sans", "Gill Sans MT", "Trebuchet MS", sans-serif;
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body {
+    margin: 0;
+    background: var(--ivory);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.45;
+  }
+  :focus { outline: none; }
+  :focus-visible { outline: 2px solid var(--forest); outline-offset: 2px; }
+  .skip {
+    position: absolute;
+    left: 12px;
+    top: -48px;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 8px 10px;
+    z-index: 2;
+  }
+  .skip:focus { top: 8px; }
+  .mast { background: var(--black); color: var(--inspector-ink); }
+  .mast-inner, .workspace { max-width: 1180px; margin: 0 auto; }
+  .mast-inner { padding: 22px 28px 28px; }
+  .mast-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .wordmark { margin: 0; letter-spacing: 0.18em; font-size: 0.78rem; }
+  .demo-label {
+    margin: 0;
+    border: 1px solid var(--mint);
+    color: #d7ebe0;
+    padding: 3px 7px;
+    letter-spacing: 0.14em;
+    font-size: 0.68rem;
+  }
+  .mast h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(2.05rem, 4.2vw, 3.35rem);
+    line-height: 1.08;
+    margin: 18px 0 12px;
+    max-width: 16ch;
+  }
+  .accent { width: 48px; height: 2px; background: var(--forest); border: 0; margin: 0 0 14px; }
+  .deck { margin: 0; max-width: 38rem; color: #d7d0c4; }
+  .workspace { padding: 18px 28px 56px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .presets, .exports { display: flex; flex-wrap: wrap; gap: 8px; }
+  button, .import-label {
+    font: inherit;
+    min-height: 44px;
+    padding: 0 12px;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid #c9bfb0;
+    border-radius: 0;
+    cursor: pointer;
+  }
+  button.primary { background: var(--forest); color: var(--forest-ink); border-color: var(--forest); }
+  button[aria-pressed="true"] { color: var(--forest); border-color: var(--forest); border-bottom-width: 3px; }
+  button:disabled { opacity: 0.42; cursor: not-allowed; }
+  .import-label { display: inline-flex; align-items: center; background: var(--paper); }
+  .import-label input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .banner { margin: 0 0 12px; padding: 12px 14px; }
+  .banner.stale { background: var(--ochre-bg); color: #3f2a08; border: 1px solid #dfc48a; font-weight: 650; }
+  .banner.error { background: var(--brick-bg); color: var(--brick); border: 1px solid #e3c2bb; }
+  .banner.error ul { margin: 8px 0 0; padding-left: 1.2rem; }
+  .banner.pending { background: transparent; border: 1px solid var(--rule); }
+  .action-status { min-height: 1.2em; margin: 0 0 10px; color: var(--quiet); }
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.82fr);
+    border: 1px solid #2a2722;
+    min-height: 620px;
+  }
+  .customer-sheet { background: var(--paper); padding: 36px 36px 48px; min-width: 0; }
+  .customer-sheet.is-stale { outline: 3px solid #c48a2a; outline-offset: -3px; }
+  .customer-sheet h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.9rem, 3vw, 2.7rem);
+    line-height: 1.12;
+    margin: 0 0 8px;
+  }
+  .customer-sheet h2 {
+    margin: 26px 0 8px;
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--forest);
+    font-weight: 650;
+  }
+  .fictional-mark {
+    margin: 0 0 12px;
+    color: var(--forest);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+  .kicker { margin: 0; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.75rem; color: var(--quiet); }
+  .meta, .note, .detail, .next, .foot, .empty { margin: 0; }
+  .meta { margin-bottom: 4px; }
+  .customer-sheet p, .customer-sheet li { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .line, .subtotal { border-top: 1px solid var(--rule); padding: 10px 0 8px; }
+  .subtotal { border-top-width: 2px; }
+  .line-main { display: flex; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+  .line-main p { margin: 0; }
+  .amt { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .subtotal .amt { color: var(--forest); font-weight: 650; }
+  .src { margin: 2px 0 0; color: var(--quiet); font-family: var(--mono); font-size: 12px; line-height: 1.4; }
+  .customer-sheet ol { margin: 0; padding-left: 1.25rem; }
+  .customer-sheet li { margin: 0 0 12px; }
+  .next { margin-top: 22px; }
+  .foot { margin-top: 10px; color: var(--quiet); }
+  .evidence {
+    background: var(--inspector);
+    color: var(--inspector-ink);
+    padding: 16px 16px 24px;
+    min-width: 0;
+    border-left: 1px solid #2a2722;
+  }
+  .mast :focus-visible, .evidence :focus-visible { outline-color: #d5e6da; }
+  .counts { margin: 0 0 10px; color: #c9d7ce; font-size: 0.86rem; }
+  .tabs { display: flex; border-bottom: 1px solid #3a372f; }
+  .tabs button {
+    color: #cfc6b8;
+    border: 0;
+    background: transparent;
+    border-bottom: 2px solid transparent;
+    padding: 0 10px;
+  }
+  .tabs button[aria-selected="true"] { color: #f4f0e8; border-bottom-color: var(--mint); }
+  .evidence dl { margin: 12px 0 0; }
+  .evidence dt { margin-top: 12px; color: var(--mint); font-family: var(--mono); font-size: 12px; }
+  .evidence dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .evidence .status { margin: 0; color: var(--mint); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+  .evidence ol { margin: 12px 0 0; padding-left: 1.2rem; }
+  .evidence li { margin: 0 0 12px; }
+  .withheld, .ignored { margin: 16px 0 0; color: #d7d0c4; }
+  .source-drawer { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 4px; }
+  .source-drawer summary {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.84rem;
+  }
+  .source-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 8px; }
+  .source-hint { margin: 0; color: var(--quiet); flex: 1 1 16rem; }
+  textarea {
+    width: 100%;
+    min-height: 240px;
+    background: var(--paper);
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 12px;
+    font: 13px/1.45 var(--mono);
+    resize: vertical;
+  }
+  .proves {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+    gap: 8px 28px;
+  }
+  .proves h2 { font-family: var(--serif); font-weight: 400; font-size: 1.7rem; margin: 0; }
+  .proves h3 { margin: 12px 0 2px; font-size: 0.95rem; color: var(--forest); font-weight: 650; }
+  .proves h3:first-of-type { margin-top: 0; }
+  .proves p { margin: 0; }
+  .lede { margin-bottom: 8px; }
+  .print-hold { display: none; padding: 24px; font-family: var(--serif); font-size: 1.3rem; }
+  @media (max-width: 860px) {
+    .mast-inner, .workspace { padding-left: 16px; padding-right: 16px; }
+    .mast h1 { max-width: none; }
+    .stage { grid-template-columns: 1fr; }
+    .evidence { border-left: 0; border-top: 1px solid #2a2722; }
+    .customer-sheet { padding: 22px 16px 32px; }
+    .proves { grid-template-columns: 1fr; }
+    .toolbar button, .import-label { flex: 1 1 auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+  @media print {
+    .chrome, .evidence, .banner, .source-drawer, .proves, .skip, .toolbar, .action-status { display: none !important; }
+    body { background: white; }
+    .workspace { padding: 0; max-width: none; }
+    .stage { display: block; border: 0; min-height: 0; }
+    .customer-sheet { outline: none !important; padding: 0; }
+    body[data-exports="off"] .customer-sheet { display: none !important; }
+    body[data-exports="off"] .print-hold { display: block !important; }
+  }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body data-exports="off" data-state="empty">
+<a class="skip" href="#customer-view">Skip to customer page</a>
+<header class="chrome mast">
+  <div class="mast-inner">
+    <div class="mast-row">
+      <p class="wordmark">QUOTE / RESCUE</p>
+      <p class="demo-label">DEMO</p>
+    </div>
+    <h1>Every quote. Clear enough to decide.</h1>
+    <hr class="accent">
+    <p class="deck">A contractor estimate becomes a customer page you can check against the source. This is a deterministic compiler. No AI model runs inside the browser.</p>
+  </div>
+</header>
+<main class="workspace">
+  <div class="toolbar chrome">
+    <div class="presets" role="group" aria-label="Fictional presets">
+      <button type="button" data-testid="preset-door" data-preset="door" aria-pressed="false">Entry door</button>
+      <button type="button" data-testid="preset-service" data-preset="service" aria-pressed="false">Garage service</button>
+      <button type="button" data-testid="preset-minimal" data-preset="minimal" aria-pressed="false">Minimal door</button>
+    </div>
+    <button type="button" class="primary" data-testid="generate">Generate decision pack</button>
+    <div class="exports">
+      <button type="button" data-testid="copy" disabled>Copy customer pack</button>
+      <button type="button" data-testid="export-html" disabled>Download customer HTML</button>
+      <button type="button" data-testid="export-json" disabled>Download customer JSON</button>
+      <button type="button" data-testid="print" disabled>Print</button>
+      <button type="button" data-testid="reset">Reset</button>
+    </div>
+  </div>
+  <p class="action-status chrome" data-testid="action-status" role="status"></p>
+  <p id="stale" class="banner stale" data-testid="stale" role="status" hidden>STALE — the source changed after this pack was generated. Copy, download, and print stay off until you generate again.</p>
+  <div id="error" class="banner error" data-testid="error" role="alert" hidden></div>
+  <p id="trace-pending" class="banner pending" data-testid="trace-pending" role="status" hidden>The trace receipt is still being hashed. Copy, download, and print stay off until that finishes. The customer page is already compiled.</p>
+  <p class="print-hold">Printing is held. Generate a current decision pack before printing the customer page.</p>
+  <div class="stage">
+    <article id="customer-view" class="customer-sheet" data-testid="customer-view" aria-label="Customer page">
+      <p class="empty">Generate a decision pack to see the customer page.</p>
+    </article>
+    <aside class="evidence" aria-label="Evidence inspector">
+      <p class="counts" data-testid="counts"></p>
+      <div class="tabs" role="tablist" aria-label="Evidence">
+        <button type="button" role="tab" id="tab-source" aria-controls="panel-source" aria-selected="true" tabindex="0">Source mapping</button>
+        <button type="button" role="tab" id="tab-missing" aria-controls="panel-missing" aria-selected="false" tabindex="-1">Missing information</button>
+        <button type="button" role="tab" id="tab-receipt" aria-controls="panel-receipt" aria-selected="false" tabindex="-1">Run receipt</button>
+      </div>
+      <div id="panel-source" role="tabpanel" aria-labelledby="tab-source"></div>
+      <div id="panel-missing" role="tabpanel" aria-labelledby="tab-missing" hidden></div>
+      <div id="panel-receipt" role="tabpanel" aria-labelledby="tab-receipt" data-testid="receipt" hidden>
+        <p>No receipt yet. Generate a valid pack to record a run.</p>
+      </div>
+    </aside>
+  </div>
+  <details class="source-drawer chrome" open>
+    <summary>Source JSON</summary>
+    <div class="source-tools">
+      <label class="import-label">Import JSON
+        <input type="file" data-testid="import" accept="application/json,.json">
+      </label>
+      <p id="source-hint" class="source-hint">Edit the estimate or import a local file, then generate. Notes in the source stay private and are left out of the customer pack.</p>
+    </div>
+    <textarea id="source-editor" data-testid="source-editor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Estimate source JSON" aria-describedby="source-hint"></textarea>
+  </details>
+  <section class="proves chrome" data-testid="what-proves" aria-labelledby="proves-title">
+    <h2 id="proves-title">What this proves</h2>
+    <div>
+      <p class="lede">This page compiles a quote you can read. It does not show that anyone would pay for it, and no AI model runs inside the browser.</p>
+      <h3>Source fidelity</h3>
+      <p>Customer lines come from supplied fields or fixed question templates, each with a JSON pointer back to the source.</p>
+      <h3>Deterministic compilation</h3>
+      <p>The same validated source rebuilds the same pack. The clock and the hashes stay in the receipt, outside that pack.</p>
+      <h3>Reviewable unknowns</h3>
+      <p>Blank, missing, and unknown terms stay questions. They are not rewritten as warranties, dates, or prices.</p>
+      <h3>Local-first</h3>
+      <p>Parsing, compiling, and export stay in this browser. The estimate is not uploaded.</p>
+    </div>
+  </section>
+</main>
+<script id="quote-rescue-app">
+'use strict';
+(function () {
+  var COMPILER_VERSION = 'quote-rescue-compiler/1';
+  var SCHEMA_VERSION = '1';
+  var CANON_VERSION = 'quote-rescue-canon/1';
+  var CUSTOMER_SCHEMA = 'quote-rescue-customer/1';
+  var MAX_SOURCE_CHARS = 100000;
+  var MAX_CENTS = 1000000000;
+  var ID_RE = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
+  var ROOT_KEYS = {
+    schemaVersion: true, fictional: true, currency: true, contractor: true,
+    projectTitle: true, quoteId: true, lineItems: true, facts: true,
+    exclusions: true, options: true, notes: true
+  };
+  function isBanned(key) {
+    return key === '__proto__' || key === 'constructor' || key === 'prototype';
+  }
+  function hasOwn(map, key) {
+    return Object.prototype.hasOwnProperty.call(map, key);
+  }
+  var DECISION_TERMS = [
+    { id: 'warranty', label: 'Warranty' },
+    { id: 'disposal', label: 'Disposal' },
+    { id: 'hardware', label: 'Hardware' },
+    { id: 'schedule', label: 'Schedule' }
+  ];
+  var NEXT_STEP = 'Next step: reply with the questions in this pack, or ask the contractor to confirm them in writing. This page does not approve the quote, reserve a date, or form a contract.';
+  var COMPILER_NOTE = 'Compiled in the browser from the supplied estimate. Same source, same pack. This is not a technical, legal, or payment guarantee.';
+  var OPTIONS_NOTE = 'Priced alternatives are not included in the before-tax subtotal.';
+  var BANNER = 'FICTIONAL DEMO';
+  var TRACE_NOTE = 'SHA-256 covers trace integrity of this run only. It does not verify that the source is true, complete, or commercially valid.';
+  var SERIAL_NOTE = 'Input SHA-256 is the versioned canonical validated snapshot. Output SHA-256 is the versioned canonical customer payload with any receipt removed. Object keys are sorted and array order is kept. Editor whitespace is not the hashed text.';
+
+  var PRESETS = {
+    door: {
+      schemaVersion: '1',
+      fictional: true,
+      currency: 'CAD',
+      contractor: 'Fictional Doorwright Co.',
+      projectTitle: 'Entry door replacement',
+      quoteId: 'QR-DEMO-A',
+      lineItems: [
+        { id: 'remove', description: 'Removal + installation', amount: 1400 },
+        { id: 'unit', description: 'insulated steel entry-door unit', amount: 1800 }
+      ],
+      facts: [
+        { id: 'finish', label: 'Finish', value: 'primed white' },
+        { id: 'dimensions', label: 'Dimensions', value: 'site confirmation required' }
+      ],
+      exclusions: [],
+      options: [],
+      notes: 'PRIVATE-NOTE-DOOR-9F3A — operator only'
+    },
+    service: {
+      schemaVersion: '1',
+      fictional: true,
+      currency: 'CAD',
+      contractor: 'Fictional Harbour Door Service',
+      projectTitle: 'Garage door servicing',
+      quoteId: 'QR-DEMO-B',
+      lineItems: [
+        { id: 'inspect', description: 'Inspection', amount: 120 },
+        { id: 'adjust', description: 'Adjustment', amount: 160 }
+      ],
+      facts: [
+        { id: 'warranty', label: 'Warranty', value: 'unknown' },
+        { id: 'schedule', label: 'Schedule', value: 'unknown' },
+        { id: 'hardware', label: 'Hardware', value: 'unknown' }
+      ],
+      exclusions: [],
+      options: [],
+      notes: 'PRIVATE-NOTE-SERVICE-7C2E — operator only'
+    },
+    minimal: {
+      schemaVersion: '1',
+      fictional: true,
+      currency: 'CAD',
+      contractor: 'Fictional Northwind Door Co.',
+      projectTitle: 'Replace entry door',
+      quoteId: 'QR-DEMO-C',
+      lineItems: [
+        { id: 'door', description: 'Replace entry door', amount: 3200 }
+      ],
+      facts: [],
+      exclusions: [],
+      options: [],
+      notes: 'PRIVATE-NOTE-MINIMAL-4B1D — operator only'
+    }
+  };
+
+  function deepFreeze(value) {
+    if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+    Object.freeze(value);
+    var keys = Object.keys(value);
+    for (var i = 0; i < keys.length; i += 1) deepFreeze(value[keys[i]]);
+    return value;
+  }
+  deepFreeze(PRESETS);
+
+  // Realm-agnostic plain-object test. Comparing against this realm's
+  // Object.prototype would reject objects created in another realm (iframe,
+  // worker, Node vm, SSR) even though they are ordinary JSON data. Instead we
+  // require a prototype chain of at most two links: null (Object.create(null))
+  // or a prototype whose own prototype is null (some realm's Object.prototype).
+  // Class instances, arrays, Dates, Maps and objects with an injected prototype
+  // all fail this check, so the hardening is unchanged.
+  function isPlainObject(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    if (Object.prototype.toString.call(value) !== '[object Object]') return false;
+    var proto = Object.getPrototypeOf(value);
+    if (proto === null) return true;
+    return Object.getPrototypeOf(proto) === null;
+  }
+
+  function escapePointer(token) {
+    return String(token).replace(/~/g, '~0').replace(/\//g, '~1');
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function hasBadControls(text) {
+    return /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(text);
+  }
+
+  function isBlankValue(value) {
+    return value == null || (typeof value === 'string' && value.trim() === '');
+  }
+
+  function isUnknownString(value) {
+    return typeof value === 'string' && value.trim().toLowerCase() === 'unknown';
+  }
+
+  function received(value) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      var text = Object.is(value, -0) ? '-0' : value.toString();
+      if (text.length <= 24) return text;
+    }
+    if (value === null) return 'null';
+    if (typeof value === 'string') return 'text';
+    if (typeof value === 'number') return 'a non-finite number';
+    return typeof value;
+  }
+
+  function moneyToCents(amount) {
+    if (typeof amount !== 'number' || !Number.isFinite(amount)) {
+      return { ok: false, message: 'must be a finite number. Received ' + received(amount) + '. This compiler does not round.' };
+    }
+    if (Object.is(amount, -0) || amount < 0) {
+      return { ok: false, message: 'must be nonnegative. Received ' + received(amount) + '. This compiler does not round.' };
+    }
+    var text = amount.toString();
+    if (/[eE]/.test(text)) {
+      return { ok: false, message: 'must be an exact cent amount without exponent notation. Received ' + text + '. This compiler does not round.' };
+    }
+    var parts = text.split('.');
+    if (parts.length !== 1 && parts.length !== 2) {
+      return { ok: false, message: 'must be an exact cent amount. This compiler does not round.' };
+    }
+    if (!/^\d+$/.test(parts[0]) || (parts[1] && !/^\d+$/.test(parts[1]))) {
+      return { ok: false, message: 'must be an exact cent amount. This compiler does not round.' };
+    }
+    if (parts[1] && parts[1].length > 2) {
+      return { ok: false, message: 'has more than 2 decimal places. Received ' + text + '. This compiler does not round.' };
+    }
+    var frac = (parts[1] || '').padEnd(2, '0');
+    var cents = Number(parts[0]) * 100 + Number(frac);
+    if (!Number.isSafeInteger(cents) || cents > MAX_CENTS) {
+      return { ok: false, message: 'exceeds CAD 10000000.00.' };
+    }
+    var reconstructed = Number(parts[0]) + Number(frac) / 100;
+    if (reconstructed !== amount) {
+      return { ok: false, message: 'is not exactly representable in cents. This compiler does not round.' };
+    }
+    return { ok: true, cents: cents };
+  }
+
+  function formatCents(cents) {
+    var whole = Math.floor(cents / 100);
+    var frac = cents % 100;
+    return String(whole) + '.' + String(frac).padStart(2, '0');
+  }
+
+  function canonicalJson(value) {
+    if (value === null) return 'null';
+    var kind = typeof value;
+    if (kind === 'string' || kind === 'boolean') return JSON.stringify(value);
+    if (kind === 'number') {
+      if (!Number.isFinite(value)) throw new Error('Cannot canonicalize a non-finite number');
+      return JSON.stringify(value === 0 ? 0 : value);
+    }
+    if (Array.isArray(value)) {
+      var items = [];
+      for (var i = 0; i < value.length; i += 1) items.push(canonicalJson(value[i]));
+      return '[' + items.join(',') + ']';
+    }
+    if (kind === 'object') {
+      var keys = Object.keys(value).sort();
+      var props = [];
+      for (var k = 0; k < keys.length; k += 1) {
+        props.push(JSON.stringify(keys[k]) + ':' + canonicalJson(value[keys[k]]));
+      }
+      return '{' + props.join(',') + '}';
+    }
+    throw new Error('Cannot canonicalize this value');
+  }
+
+  function prettyJson(value, indent) {
+    var level = indent || 0;
+    var pad = new Array(level + 1).join(' ');
+    var inner = new Array(level + 3).join(' ');
+    if (value === null || typeof value !== 'object') return canonicalJson(value);
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '[]';
+      var rows = [];
+      for (var i = 0; i < value.length; i += 1) rows.push(inner + prettyJson(value[i], level + 2));
+      return '[\n' + rows.join(',\n') + '\n' + pad + ']';
+    }
+    var keys = Object.keys(value).sort();
+    if (keys.length === 0) return '{}';
+    var lines = [];
+    for (var n = 0; n < keys.length; n += 1) {
+      lines.push(inner + JSON.stringify(keys[n]) + ': ' + prettyJson(value[keys[n]], level + 2));
+    }
+    return '{\n' + lines.join(',\n') + '\n' + pad + '}';
+  }
+
+  function inputHashMaterial(snapshot) {
+    return CANON_VERSION + '\ninput\n' + canonicalJson(snapshot);
+  }
+
+  function outputHashMaterial(customer) {
+    var copy = JSON.parse(canonicalJson(customer));
+    if (copy && typeof copy === 'object') delete copy.receipt;
+    return CANON_VERSION + '\noutput\n' + canonicalJson(copy);
+  }
+
+  function webCryptoStatus() {
+    try {
+      var subtle = globalThis.crypto && globalThis.crypto.subtle;
+      if (!subtle || typeof subtle.digest !== 'function') return 'unavailable';
+      if (typeof TextEncoder !== 'function') return 'unavailable';
+      return 'available';
+    } catch (error) {
+      return 'unavailable';
+    }
+  }
+
+  function classifyHashFailure(error) {
+    if (error && error.code === 'UNAVAILABLE') return 'unavailable';
+    return 'error';
+  }
+
+  function sha256Hex(text) {
+    if (webCryptoStatus() !== 'available') {
+      var unavailable = new Error('Web Crypto SHA-256 is unavailable');
+      unavailable.code = 'UNAVAILABLE';
+      return Promise.reject(unavailable);
+    }
+    var bytes = new TextEncoder().encode(String(text));
+    return globalThis.crypto.subtle.digest('SHA-256', bytes).then(function (buffer) {
+      var view = new Uint8Array(buffer);
+      var hex = '';
+      for (var i = 0; i < view.length; i += 1) hex += view[i].toString(16).padStart(2, '0');
+      return hex;
+    });
+  }
+
+  function settleTrace(spec) {
+    var accept = spec.runToken === spec.liveToken && spec.stale !== true;
+    var settled = spec.hashStatus === 'ready' || spec.hashStatus === 'unavailable' || spec.hashStatus === 'error';
+    return { accept: accept, enableExports: accept && settled };
+  }
+
+  function downloadName(quoteId, ext) {
+    var clean = String(quoteId).replace(/[^A-Za-z0-9._-]+/g, '');
+    return 'quote-rescue-' + (clean || 'quote') + '-customer.' + (ext === 'json' ? 'json' : 'html');
+  }
+
+  function customerJsonFile(customer) {
+    return prettyJson(customer) + '\n';
+  }
+
+  function fail(errors) {
+    return { ok: false, errors: errors };
+  }
+
+  function readRequiredString(input, key, errors, max) {
+    var path = '/' + key;
+    if (!Object.prototype.hasOwnProperty.call(input, key)) {
+      errors.push({ path: path, message: key + ' is required.' });
+      return null;
+    }
+    var value = input[key];
+    if (typeof value !== 'string') {
+      errors.push({ path: path, message: key + ' must be a string.' });
+      return null;
+    }
+    if (value.trim() === '') {
+      errors.push({ path: path, message: key + ' is blank.' });
+      return null;
+    }
+    if (value.length > max) {
+      errors.push({ path: path, message: key + ' must be at most ' + max + ' characters.' });
+      return null;
+    }
+    if (hasBadControls(value)) {
+      errors.push({ path: path, message: key + ' contains disallowed control characters.' });
+      return null;
+    }
+    return value;
+  }
+
+  function readIdValue(value, path, label, errors) {
+    if (typeof value !== 'string' || value.trim() === '') {
+      errors.push({ path: path, message: label + ' is required and must be a non-empty string.' });
+      return null;
+    }
+    if (!ID_RE.test(value)) {
+      errors.push({ path: path, message: label + ' must be 1-64 characters and use only letters, digits, and . _ : -' });
+      return null;
+    }
+    return value;
+  }
+
+  function noteIgnored(target, allowed, base, ignoredPaths, errors) {
+    var keys = Object.keys(target);
+    for (var i = 0; i < keys.length; i += 1) {
+      var key = keys[i];
+      var path = base + '/' + escapePointer(key);
+      if (isBanned(key)) {
+        errors.push({ path: path, message: 'This key is not allowed.' });
+      } else if (!allowed[key]) {
+        ignoredPaths.push(path);
+      }
+    }
+  }
+
+  function readLineItems(input, errors, ignoredPaths) {
+    var parsed = [];
+    if (!Array.isArray(input.lineItems)) {
+      errors.push({ path: '/lineItems', message: 'lineItems must be an array with at least one item.' });
+      return parsed;
+    }
+    if (input.lineItems.length < 1) {
+      errors.push({ path: '/lineItems', message: 'lineItems must contain at least one item.' });
+    }
+    if (input.lineItems.length > 40) {
+      errors.push({ path: '/lineItems', message: 'lineItems must contain at most 40 items.' });
+      return parsed;
+    }
+    var seen = Object.create(null);
+    for (var index = 0; index < input.lineItems.length; index += 1) {
+      var item = input.lineItems[index];
+      var base = '/lineItems/' + index;
+      if (!isPlainObject(item)) {
+        errors.push({ path: base, message: 'Each line item must be an object.' });
+        continue;
+      }
+      var before = errors.length;
+      noteIgnored(item, { id: true, description: true, amount: true }, base, ignoredPaths, errors);
+      var id = readIdValue(item.id, base + '/id', 'id', errors);
+      if (typeof item.id === 'string' && item.id.length <= 64) {
+        if (seen[item.id]) {
+          errors.push({ path: base + '/id', message: 'id repeats ' + seen[item.id] + '.' });
+        } else {
+          seen[item.id] = base + '/id';
+        }
+      }
+      var description = null;
+      if (!Object.prototype.hasOwnProperty.call(item, 'description')) {
+        errors.push({ path: base + '/description', message: 'description is required.' });
+      } else if (typeof item.description !== 'string') {
+        errors.push({ path: base + '/description', message: 'description must be a string.' });
+      } else if (item.description.trim() === '') {
+        errors.push({ path: base + '/description', message: 'description is blank.' });
+      } else if (item.description.length > 2000) {
+        errors.push({ path: base + '/description', message: 'description must be at most 2000 characters.' });
+      } else if (hasBadControls(item.description)) {
+        errors.push({ path: base + '/description', message: 'description contains disallowed control characters.' });
+      } else {
+        description = item.description;
+      }
+      var cents = null;
+      if (!Object.prototype.hasOwnProperty.call(item, 'amount')) {
+        errors.push({ path: base + '/amount', message: 'amount is required.' });
+      } else {
+        var money = moneyToCents(item.amount);
+        if (!money.ok) errors.push({ path: base + '/amount', message: 'amount ' + money.message });
+        else cents = money.cents;
+      }
+      if (errors.length === before && id && description != null && cents != null) {
+        parsed.push({ id: id, description: description, amount: item.amount, amountCents: cents });
+      }
+    }
+    return parsed;
+  }
+
+  function readFacts(input, errors, ignoredPaths) {
+    var parsed = [];
+    if (!Array.isArray(input.facts)) {
+      errors.push({ path: '/facts', message: 'facts must be an array. Use [] when none were supplied.' });
+      return parsed;
+    }
+    if (input.facts.length > 40) {
+      errors.push({ path: '/facts', message: 'facts must contain at most 40 items.' });
+      return parsed;
+    }
+    var seen = Object.create(null);
+    for (var index = 0; index < input.facts.length; index += 1) {
+      var fact = input.facts[index];
+      var base = '/facts/' + index;
+      if (!isPlainObject(fact)) {
+        errors.push({ path: base, message: 'Each fact must be an object.' });
+        continue;
+      }
+      var before = errors.length;
+      noteIgnored(fact, { id: true, label: true, value: true }, base, ignoredPaths, errors);
+      var id = readIdValue(fact.id, base + '/id', 'id', errors);
+      if (typeof fact.id === 'string' && fact.id.length <= 64) {
+        if (seen[fact.id]) errors.push({ path: base + '/id', message: 'id repeats ' + seen[fact.id] + '.' });
+        else seen[fact.id] = base + '/id';
+      }
+      var label = null;
+      if (typeof fact.label !== 'string') {
+        errors.push({ path: base + '/label', message: 'label must be a non-empty string.' });
+      } else if (fact.label.trim() === '') {
+        errors.push({ path: base + '/label', message: 'label is blank.' });
+      } else if (fact.label.length > 180) {
+        errors.push({ path: base + '/label', message: 'label must be at most 180 characters.' });
+      } else if (hasBadControls(fact.label)) {
+        errors.push({ path: base + '/label', message: 'label contains disallowed control characters.' });
+      } else {
+        label = fact.label;
+      }
+      var value = null;
+      if (Object.prototype.hasOwnProperty.call(fact, 'value') && fact.value != null) {
+        if (typeof fact.value !== 'string') {
+          errors.push({ path: base + '/value', message: 'value must be a string, blank, or null.' });
+        } else if (fact.value.length > 2000) {
+          errors.push({ path: base + '/value', message: 'value must be at most 2000 characters.' });
+        } else if (hasBadControls(fact.value)) {
+          errors.push({ path: base + '/value', message: 'value contains disallowed control characters.' });
+        } else {
+          value = fact.value;
+        }
+      }
+      if (errors.length === before && id && label != null) {
+        parsed.push({ id: id, label: label, value: value });
+      }
+    }
+    return parsed;
+  }
+
+  function readExclusions(input, errors) {
+    var parsed = [];
+    if (!Array.isArray(input.exclusions)) {
+      errors.push({ path: '/exclusions', message: 'exclusions must be an array. Use [] when none were supplied.' });
+      return parsed;
+    }
+    if (input.exclusions.length > 40) {
+      errors.push({ path: '/exclusions', message: 'exclusions must contain at most 40 items.' });
+      return parsed;
+    }
+    for (var index = 0; index < input.exclusions.length; index += 1) {
+      var item = input.exclusions[index];
+      var path = '/exclusions/' + index;
+      if (typeof item !== 'string') {
+        errors.push({ path: path, message: 'each exclusion must be a non-empty string.' });
+      } else if (item.trim() === '') {
+        errors.push({ path: path, message: 'exclusion is blank.' });
+      } else if (item.length > 2000) {
+        errors.push({ path: path, message: 'exclusion must be at most 2000 characters.' });
+      } else if (hasBadControls(item)) {
+        errors.push({ path: path, message: 'exclusion contains disallowed control characters.' });
+      } else {
+        parsed.push({ text: item });
+      }
+    }
+    return parsed;
+  }
+
+  function readOptions(input, errors, ignoredPaths) {
+    var parsed = [];
+    if (!Array.isArray(input.options)) {
+      errors.push({ path: '/options', message: 'options must be an array. Use [] when none were supplied.' });
+      return parsed;
+    }
+    if (input.options.length > 20) {
+      errors.push({ path: '/options', message: 'options must contain at most 20 items.' });
+      return parsed;
+    }
+    for (var index = 0; index < input.options.length; index += 1) {
+      var item = input.options[index];
+      var base = '/options/' + index;
+      if (!isPlainObject(item)) {
+        errors.push({ path: base, message: 'Each option must be an object.' });
+        continue;
+      }
+      var before = errors.length;
+      noteIgnored(item, { label: true, amount: true, description: true }, base, ignoredPaths, errors);
+      var label = null;
+      if (typeof item.label !== 'string' || item.label.trim() === '') {
+        errors.push({ path: base + '/label', message: 'label must be a non-empty string.' });
+      } else if (item.label.length > 180) {
+        errors.push({ path: base + '/label', message: 'label must be at most 180 characters.' });
+      } else if (hasBadControls(item.label)) {
+        errors.push({ path: base + '/label', message: 'label contains disallowed control characters.' });
+      } else {
+        label = item.label;
+      }
+      var cents = null;
+      if (!Object.prototype.hasOwnProperty.call(item, 'amount')) {
+        errors.push({ path: base + '/amount', message: 'amount is required.' });
+      } else {
+        var money = moneyToCents(item.amount);
+        if (!money.ok) errors.push({ path: base + '/amount', message: 'amount ' + money.message });
+        else cents = money.cents;
+      }
+      var description = null;
+      if (Object.prototype.hasOwnProperty.call(item, 'description') && item.description != null) {
+        if (typeof item.description !== 'string') {
+          errors.push({ path: base + '/description', message: 'description must be a string when supplied.' });
+        } else if (item.description.length > 2000) {
+          errors.push({ path: base + '/description', message: 'description must be at most 2000 characters.' });
+        } else if (hasBadControls(item.description)) {
+          errors.push({ path: base + '/description', message: 'description contains disallowed control characters.' });
+        } else if (item.description.trim() !== '') {
+          description = item.description;
+        }
+      }
+      if (errors.length === before && label && cents != null) {
+        var option = { label: label, amount: item.amount, amountCents: cents };
+        if (description) option.description = description;
+        parsed.push(option);
+      }
+    }
+    return parsed;
+  }
+
+  function validateEstimate(input) {
+    if (!isPlainObject(input)) {
+      return fail([{ path: '/', message: 'Estimate must be a JSON object.' }]);
+    }
+    var errors = [];
+    var ignoredPaths = [];
+    var withheldPaths = [];
+    noteIgnored(input, ROOT_KEYS, '', ignoredPaths, errors);
+    if (input.schemaVersion !== SCHEMA_VERSION) {
+      errors.push({ path: '/schemaVersion', message: 'schemaVersion must be the string "1".' });
+    }
+    if (typeof input.fictional !== 'boolean') {
+      errors.push({ path: '/fictional', message: 'fictional must be a boolean.' });
+    }
+    if (input.currency !== 'CAD') {
+      errors.push({ path: '/currency', message: 'currency must be "CAD". Other currencies are not supported.' });
+    }
+    var contractor = readRequiredString(input, 'contractor', errors, 180);
+    var projectTitle = readRequiredString(input, 'projectTitle', errors, 180);
+    var quoteId = null;
+    if (!Object.prototype.hasOwnProperty.call(input, 'quoteId')) {
+      errors.push({ path: '/quoteId', message: 'quoteId is required.' });
+    } else {
+      quoteId = readIdValue(input.quoteId, '/quoteId', 'quoteId', errors);
+    }
+    var notes;
+    if (Object.prototype.hasOwnProperty.call(input, 'notes')) {
+      if (typeof input.notes !== 'string') {
+        errors.push({ path: '/notes', message: 'notes must be a string when present. Notes are private and are not copied to the customer pack.' });
+      } else if (input.notes.length > 4000) {
+        errors.push({ path: '/notes', message: 'notes must be at most 4000 characters.' });
+      } else if (hasBadControls(input.notes)) {
+        errors.push({ path: '/notes', message: 'notes contain disallowed control characters.' });
+      } else {
+        notes = input.notes;
+        withheldPaths.push('/notes');
+      }
+    }
+    var lineItems = readLineItems(input, errors, ignoredPaths);
+    var facts = readFacts(input, errors, ignoredPaths);
+    var exclusions = readExclusions(input, errors);
+    var options = readOptions(input, errors, ignoredPaths);
+    if (errors.length) return fail(errors);
+    var subtotalCents = 0;
+    for (var i = 0; i < lineItems.length; i += 1) subtotalCents += lineItems[i].amountCents;
+    if (!Number.isSafeInteger(subtotalCents) || subtotalCents > MAX_CENTS) {
+      return fail([{ path: '/lineItems', message: 'The before-tax subtotal exceeds CAD 10000000.00. This compiler does not round.' }]);
+    }
+    var snapshot = {
+      schemaVersion: SCHEMA_VERSION,
+      fictional: input.fictional,
+      currency: 'CAD',
+      contractor: contractor,
+      projectTitle: projectTitle,
+      quoteId: quoteId,
+      lineItems: lineItems.map(function (item) {
+        return { id: item.id, description: item.description, amount: item.amount };
+      }),
+      facts: facts.map(function (fact) {
+        return { id: fact.id, label: fact.label, value: fact.value };
+      }),
+      exclusions: exclusions.map(function (item) { return item.text; }),
+      options: options.map(function (item) {
+        var opt = { label: item.label, amount: item.amount };
+        if (item.description) opt.description = item.description;
+        return opt;
+      })
+    };
+    if (notes !== undefined) snapshot.notes = notes;
+    return {
+      ok: true,
+      snapshot: snapshot,
+      subtotalCents: subtotalCents,
+      lineItems: lineItems,
+      facts: facts,
+      exclusions: exclusions,
+      options: options,
+      ignoredPaths: ignoredPaths,
+      withheldPaths: withheldPaths
+    };
+  }
+
+  function buildMappings(validated) {
+    var rows = [];
+    function add(pointer, text) { rows.push({ pointer: pointer, text: text }); }
+    add('/schemaVersion', validated.snapshot.schemaVersion);
+    add('/fictional', validated.snapshot.fictional ? 'true' : 'false');
+    add('/currency', 'CAD');
+    add('/contractor', validated.snapshot.contractor);
+    add('/projectTitle', validated.snapshot.projectTitle);
+    add('/quoteId', validated.snapshot.quoteId);
+    validated.lineItems.forEach(function (item, index) {
+      add('/lineItems/' + index + '/id', item.id);
+      add('/lineItems/' + index + '/description', item.description);
+      add('/lineItems/' + index + '/amount', formatCents(item.amountCents));
+    });
+    validated.facts.forEach(function (fact, index) {
+      add('/facts/' + index + '/id', fact.id);
+      add('/facts/' + index + '/label', fact.label);
+      add('/facts/' + index + '/value', fact.value == null || fact.value === '' ? '(blank)' : fact.value);
+    });
+    validated.exclusions.forEach(function (item, index) {
+      add('/exclusions/' + index, item.text);
+    });
+    validated.options.forEach(function (item, index) {
+      add('/options/' + index + '/label', item.label);
+      add('/options/' + index + '/amount', formatCents(item.amountCents));
+      if (item.description) add('/options/' + index + '/description', item.description);
+    });
+    return rows;
+  }
+
+  function compileEstimate(input) {
+    var validated = validateEstimate(input);
+    if (!validated.ok) return validated;
+    var presentTerms = Object.create(null);
+    validated.facts.forEach(function (fact) { presentTerms[fact.id.toLowerCase()] = true; });
+    var statements = [];
+    var questions = [];
+    validated.facts.forEach(function (fact, index) {
+      var pointer = '/facts/' + index + '/value';
+      if (isBlankValue(fact.value)) {
+        questions.push({
+          id: 'q-fact-' + index,
+          text: 'Confirm ' + fact.label + '. The source value is blank.',
+          status: 'blank',
+          source: pointer
+        });
+        return;
+      }
+      if (isUnknownString(fact.value)) {
+        questions.push({
+          id: 'q-fact-' + index,
+          text: 'Confirm ' + fact.label + '. The source marks this unknown.',
+          status: 'unknown',
+          source: pointer
+        });
+        return;
+      }
+      statements.push({ text: fact.label + ': ' + fact.value, source: pointer });
+    });
+    DECISION_TERMS.forEach(function (term) {
+      if (presentTerms[term.id]) return;
+      questions.push({
+        id: 'q-term-' + term.id,
+        text: 'Confirm ' + term.label + '. No source fact was supplied for ' + term.id + '.',
+        status: 'missing',
+        source: null
+      });
+    });
+    if (validated.exclusions.length === 0) {
+      questions.push({
+        id: 'q-exclusions',
+        text: 'Confirm exclusions. None were listed in the source.',
+        status: 'missing',
+        source: '/exclusions'
+      });
+    }
+    if (validated.options.length === 0) {
+      questions.push({
+        id: 'q-options',
+        text: 'Confirm options. None were listed in the source, and this pack does not invent priced alternatives.',
+        status: 'missing',
+        source: '/options'
+      });
+    }
+    var customer = {
+      documentType: 'quote-rescue-customer',
+      schemaVersion: CUSTOMER_SCHEMA,
+      fictional: validated.snapshot.fictional,
+      currency: 'CAD',
+      taxTreatment: 'before-tax',
+      contractor: validated.snapshot.contractor,
+      projectTitle: validated.snapshot.projectTitle,
+      quoteId: validated.snapshot.quoteId,
+      lineItems: validated.lineItems.map(function (item, index) {
+        return {
+          id: item.id,
+          description: item.description,
+          amountCents: item.amountCents,
+          amount: formatCents(item.amountCents),
+          source: '/lineItems/' + index
+        };
+      }),
+      subtotalCents: validated.subtotalCents,
+      subtotal: formatCents(validated.subtotalCents),
+      statements: statements,
+      exclusions: validated.exclusions.map(function (item, index) {
+        return { text: item.text, source: '/exclusions/' + index };
+      }),
+      options: validated.options.map(function (item, index) {
+        var opt = {
+          label: item.label,
+          amountCents: item.amountCents,
+          amount: formatCents(item.amountCents),
+          source: '/options/' + index
+        };
+        if (item.description) opt.description = item.description;
+        return opt;
+      }),
+      questions: questions,
+      nextStep: NEXT_STEP,
+      compilerNote: COMPILER_NOTE
+    };
+    if (validated.snapshot.fictional) customer.banner = BANNER;
+    if (validated.options.length) customer.optionsNote = OPTIONS_NOTE;
+    return {
+      ok: true,
+      customer: customer,
+      inputSnapshot: validated.snapshot,
+      inspector: {
+        mappings: buildMappings(validated),
+        questions: questions,
+        ignoredPaths: validated.ignoredPaths,
+        withheldPaths: validated.withheldPaths,
+        counts: {
+          lineItems: validated.lineItems.length,
+          facts: validated.facts.length,
+          sources: 0,
+          questions: questions.length
+        }
+      }
+    };
+  }
+
+  function parseEstimateJson(text) {
+    if (typeof text !== 'string') {
+      return fail([{ path: '/', message: 'Source text must be a string.' }]);
+    }
+    var source = text.replace(/^\uFEFF/, '');
+    if (source.length > MAX_SOURCE_CHARS) {
+      return fail([{ path: '/', message: 'Source is longer than ' + MAX_SOURCE_CHARS + ' characters.' }]);
+    }
+    try {
+      return { ok: true, value: JSON.parse(source) };
+    } catch (error) {
+      var detail = error && error.message ? error.message : 'Parse failed.';
+      return fail([{ path: '/', message: 'The source is not valid JSON. ' + detail }]);
+    }
+  }
+
+  function customerBlocks(customer) {
+    var blocks = [];
+    if (customer.banner) blocks.push({ role: 'banner', text: customer.banner });
+    blocks.push({ role: 'kicker', text: 'CAD · before tax' });
+    blocks.push({ role: 'title', text: customer.projectTitle });
+    blocks.push({ role: 'meta', text: customer.contractor + ' · Quote ' + customer.quoteId });
+    blocks.push({ role: 'heading', text: 'Included' });
+    customer.lineItems.forEach(function (item) {
+      blocks.push({ role: 'line', text: item.description, amount: 'CAD ' + item.amount, source: item.source });
+    });
+    blocks.push({ role: 'subtotal', text: 'Before-tax subtotal', amount: 'CAD ' + customer.subtotal });
+    if (customer.statements.length) {
+      blocks.push({ role: 'heading', text: 'Stated in the source' });
+      customer.statements.forEach(function (item) {
+        blocks.push({ role: 'item', text: item.text, source: item.source });
+      });
+    }
+    if (customer.exclusions.length) {
+      blocks.push({ role: 'heading', text: 'Exclusions' });
+      customer.exclusions.forEach(function (item) {
+        blocks.push({ role: 'item', text: item.text, source: item.source });
+      });
+    }
+    if (customer.options.length) {
+      blocks.push({ role: 'heading', text: 'Options' });
+      if (customer.optionsNote) blocks.push({ role: 'note', text: customer.optionsNote });
+      customer.options.forEach(function (item) {
+        blocks.push({ role: 'line', text: item.label, amount: 'CAD ' + item.amount, source: item.source });
+        if (item.description) {
+          blocks.push({ role: 'detail', text: item.description, source: item.source + '/description' });
+        }
+      });
+    }
+    if (customer.questions.length) {
+      blocks.push({ role: 'heading', text: 'Questions before deciding' });
+      customer.questions.forEach(function (item) {
+        blocks.push({ role: 'question', text: item.text, source: item.source });
+      });
+    }
+    blocks.push({ role: 'next', text: customer.nextStep });
+    blocks.push({ role: 'footer', text: customer.compilerNote });
+    return blocks;
+  }
+
+  function renderCustomerText(customer) {
+    var lines = [];
+    var number = 0;
+    customerBlocks(customer).forEach(function (block) {
+      if (block.role === 'line' || block.role === 'subtotal') lines.push(block.text + ' — ' + block.amount);
+      else if (block.role === 'question') {
+        number += 1;
+        lines.push(number + '. ' + block.text);
+      } else lines.push(block.text);
+      if (block.source) lines.push('source: ' + block.source);
+      else if (block.role === 'question') lines.push('source: not in source');
+    });
+    return lines.join('\n') + '\n';
+  }
+
+  var CUSTOMER_CSS = 'html{background:#f6f1e7;color:#1c1915}body{margin:0;padding:32px;font:18px/1.5 "Avenir Next","Segoe UI","Gill Sans","Trebuchet MS",sans-serif}article{max-width:40rem;margin:0 auto}h1{font:400 2.4rem/1.15 Georgia,"Iowan Old Style",Palatino,serif;margin:0 0 8px}h2{font:600 .78rem/1.2 "Avenir Next","Segoe UI",sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#1e4d38;margin:28px 0 8px}.banner{letter-spacing:.14em;text-transform:uppercase;font-size:.78rem;color:#1e4d38;font-weight:650}.kicker{letter-spacing:.12em;text-transform:uppercase;font-size:.75rem;color:#6f675c}.line,.subtotal{border-top:1px solid #d9d0c2;padding:10px 0}.subtotal{border-top-width:2px}.line-main{display:flex;justify-content:space-between;gap:12px 16px;flex-wrap:wrap}.amt{font-variant-numeric:tabular-nums;white-space:nowrap}.subtotal .amt{color:#1e4d38;font-weight:650}.src{margin:2px 0 0;color:#6f675c;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace}p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}ol{margin:0;padding-left:1.2rem}li{margin:0 0 12px}.next{margin-top:22px}.foot{margin-top:10px;color:#6f675c}';
+
+  function sourceLine(source, question) {
+    if (source) return '<p class="src">source ' + escapeHtml(source) + '</p>';
+    if (question) return '<p class="src">source not in source</p>';
+    return '';
+  }
+
+  function blockHtml(block) {
+    var text = escapeHtml(block.text || '');
+    var amount = block.amount ? escapeHtml(block.amount) : '';
+    var source = sourceLine(block.source, block.role === 'question');
+    if (block.role === 'banner') return '<p class="banner">' + text + '</p>';
+    if (block.role === 'kicker') return '<p class="kicker">' + text + '</p>';
+    if (block.role === 'title') return '<h1>' + text + '</h1>';
+    if (block.role === 'heading') return '<h2>' + text + '</h2>';
+    if (block.role === 'line' || block.role === 'subtotal') {
+      return '<section class="' + block.role + '"><div class="line-main"><p>' + text + '</p><p class="amt">' + amount + '</p></div>' + source + '</section>';
+    }
+    var cls = block.role === 'footer' ? 'foot' : block.role;
+    return '<p class="' + cls + '">' + text + '</p>' + source;
+  }
+
+  function renderCustomerHtml(customer) {
+    var parts = [
+      '<!DOCTYPE html>',
+      '<html lang="en">',
+      '<head>',
+      '<meta charset="utf-8">',
+      '<title>' + escapeHtml(customer.projectTitle) + '</title>',
+      '<style>' + CUSTOMER_CSS + '</style>',
+      '</head>',
+      '<body>',
+      '<article>'
+    ];
+    var open = false;
+    customerBlocks(customer).forEach(function (block) {
+      if (block.role === 'question') {
+        if (!open) {
+          parts.push('<ol>');
+          open = true;
+        }
+        parts.push('<li><p>' + escapeHtml(block.text) + '</p>' + sourceLine(block.source, true) + '</li>');
+        return;
+      }
+      if (open) {
+        parts.push('</ol>');
+        open = false;
+      }
+      parts.push(blockHtml(block));
+    });
+    if (open) parts.push('</ol>');
+    parts.push('</article>', '</body>', '</html>');
+    return parts.join('\n');
+  }
+
+  var api = {
+    COMPILER_VERSION: COMPILER_VERSION,
+    SCHEMA_VERSION: SCHEMA_VERSION,
+    CANON_VERSION: CANON_VERSION,
+    CUSTOMER_SCHEMA: CUSTOMER_SCHEMA,
+    MAX_SOURCE_CHARS: MAX_SOURCE_CHARS,
+    MAX_CENTS: MAX_CENTS,
+    PRESETS: PRESETS,
+    parseEstimateJson: parseEstimateJson,
+    validateEstimate: validateEstimate,
+    compileEstimate: function (input) {
+      var result = compileEstimate(input);
+      if (result.ok) result.inspector.counts.sources = result.inspector.mappings.length;
+      return result;
+    },
+    customerBlocks: customerBlocks,
+    renderCustomerHtml: renderCustomerHtml,
+    renderCustomerText: renderCustomerText,
+    canonicalJson: canonicalJson,
+    prettyJson: prettyJson,
+    customerJsonFile: customerJsonFile,
+    inputHashMaterial: inputHashMaterial,
+    outputHashMaterial: outputHashMaterial,
+    sha256Hex: sha256Hex,
+    webCryptoStatus: webCryptoStatus,
+    classifyHashFailure: classifyHashFailure,
+    settleTrace: settleTrace,
+    downloadName: downloadName,
+    escapeHtml: escapeHtml,
+    TRACE_NOTE: TRACE_NOTE,
+    SERIAL_NOTE: SERIAL_NOTE
+  };
+  window.QuoteRescue = api;
+  if (typeof globalThis !== 'undefined') globalThis.QuoteRescue = api;
+
+  function boot() {
+    function hook(name) {
+      var node = document.querySelector('[data-testid="' + name + '"]');
+      if (!node) throw new Error('Missing data-testid=' + name);
+      return node;
+    }
+    var editor = hook('source-editor');
+    var customerView = hook('customer-view');
+    var errorBox = hook('error');
+    var staleBox = hook('stale');
+    var pendingBox = hook('trace-pending');
+    var actionStatus = hook('action-status');
+    var countsEl = hook('counts');
+    var panelSource = document.getElementById('panel-source');
+    var panelMissing = document.getElementById('panel-missing');
+    var panelReceipt = hook('receipt');
+    var presetNames = ['door', 'service', 'minimal'];
+    var liveToken = 0;
+    var stale = false;
+    var packet = null;
+    var exportsReady = false;
+    var displayedRun = 0;
+    var lastUrl = null;
+
+    function setExports(on) {
+      exportsReady = !!on;
+      document.body.dataset.exports = exportsReady ? 'on' : 'off';
+      ['copy', 'export-html', 'export-json', 'print'].forEach(function (name) {
+        hook(name).disabled = !exportsReady;
+      });
+    }
+    function setState(name) { document.body.dataset.state = name; }
+    function clearStatus() { actionStatus.textContent = ''; }
+    function showPending(on) { pendingBox.hidden = !on; }
+    function showStale(on) {
+      staleBox.hidden = !on;
+      customerView.classList.toggle('is-stale', !!on);
+    }
+    function showError(errors) {
+      errorBox.replaceChildren();
+      if (!errors || !errors.length) {
+        errorBox.hidden = true;
+        return;
+      }
+      errorBox.hidden = false;
+      var title = document.createElement('p');
+      title.textContent = 'Nothing was generated. The previous pack was cleared.';
+      var list = document.createElement('ul');
+      errors.forEach(function (error) {
+        var item = document.createElement('li');
+        item.textContent = (error.path ? error.path + ' — ' : '') + error.message;
+        list.appendChild(item);
+      });
+      errorBox.appendChild(title);
+      errorBox.appendChild(list);
+    }
+    function addSourceNode(parent, source, question) {
+      if (!source && !question) return;
+      var p = document.createElement('p');
+      p.className = 'src';
+      p.textContent = source ? 'source ' + source : 'source not in source';
+      parent.appendChild(p);
+    }
+    function fillCustomer(customer) {
+      customerView.replaceChildren();
+      var list = null;
+      api.customerBlocks(customer).forEach(function (block) {
+        if (block.role === 'question') {
+          if (!list) {
+            list = document.createElement('ol');
+            customerView.appendChild(list);
+          }
+          var li = document.createElement('li');
+          var p = document.createElement('p');
+          p.textContent = block.text;
+          li.appendChild(p);
+          addSourceNode(li, block.source, true);
+          list.appendChild(li);
+          return;
+        }
+        list = null;
+        if (block.role === 'title') {
+          var h1 = document.createElement('h1');
+          h1.textContent = block.text;
+          customerView.appendChild(h1);
+          return;
+        }
+        if (block.role === 'heading') {
+          var h2 = document.createElement('h2');
+          h2.textContent = block.text;
+          customerView.appendChild(h2);
+          return;
+        }
+        if (block.role === 'line' || block.role === 'subtotal') {
+          var section = document.createElement('section');
+          section.className = block.role;
+          var main = document.createElement('div');
+          main.className = 'line-main';
+          var label = document.createElement('p');
+          label.textContent = block.text;
+          var amount = document.createElement('p');
+          amount.className = 'amt';
+          amount.textContent = block.amount;
+          main.appendChild(label);
+          main.appendChild(amount);
+          section.appendChild(main);
+          addSourceNode(section, block.source, false);
+          customerView.appendChild(section);
+          return;
+        }
+        var node = document.createElement('p');
+        if (block.role === 'banner') node.className = 'fictional-mark';
+        else if (block.role === 'footer') node.className = 'foot';
+        else node.className = block.role;
+        node.textContent = block.text;
+        customerView.appendChild(node);
+        addSourceNode(customerView, block.source, false);
+      });
+    }
+    function clearCustomer() {
+      customerView.replaceChildren();
+      customerView.classList.remove('is-stale');
+      var p = document.createElement('p');
+      p.className = 'empty';
+      p.textContent = 'No customer pack is on screen.';
+      customerView.appendChild(p);
+    }
+    function fillMappings(inspector) {
+      panelSource.replaceChildren();
+      var list = document.createElement('dl');
+      inspector.mappings.forEach(function (row) {
+        var dt = document.createElement('dt');
+        dt.textContent = row.pointer;
+        var dd = document.createElement('dd');
+        dd.textContent = row.text;
+        list.appendChild(dt);
+        list.appendChild(dd);
+      });
+      panelSource.appendChild(list);
+      if (inspector.withheldPaths.length) {
+        var withheld = document.createElement('p');
+        withheld.className = 'withheld';
+        withheld.textContent = 'Private notes withheld from the customer pack (' + inspector.withheldPaths.join(', ') + '). The note text is not shown here.';
+        panelSource.appendChild(withheld);
+      }
+      if (inspector.ignoredPaths.length) {
+        var ignored = document.createElement('p');
+        ignored.className = 'ignored';
+        ignored.textContent = 'Left out of the customer pack: ' + inspector.ignoredPaths.join(', ') + '.';
+        panelSource.appendChild(ignored);
+      }
+    }
+    function fillMissing(questions) {
+      panelMissing.replaceChildren();
+      if (!questions.length) {
+        var none = document.createElement('p');
+        none.textContent = 'No missing, blank, or unknown terms in this pack.';
+        panelMissing.appendChild(none);
+        return;
+      }
+      var list = document.createElement('ol');
+      questions.forEach(function (question) {
+        var li = document.createElement('li');
+        var status = document.createElement('p');
+        status.className = 'status';
+        status.textContent = question.status;
+        var text = document.createElement('p');
+        text.textContent = question.text;
+        var source = document.createElement('p');
+        source.className = 'src';
+        source.textContent = question.source || 'not in source';
+        li.appendChild(status);
+        li.appendChild(text);
+        li.appendChild(source);
+        list.appendChild(li);
+      });
+      panelMissing.appendChild(list);
+    }
+    function hashField(status, hex) {
+      if (status === 'ready' && hex) return hex;
+      if (status === 'pending') return 'pending';
+      if (status === 'unavailable') return 'Web Crypto is unavailable in this browser context. No checksum was computed.';
+      if (status === 'error') return 'The hash failed. No checksum is shown.';
+      return 'No checksum was computed.';
+    }
+    function formatElapsed(ms) {
+      if (typeof ms !== 'number' || !Number.isFinite(ms) || ms < 0) return 'unavailable';
+      var hundredths = Math.round(ms * 100);
+      var whole = Math.floor(hundredths / 100);
+      var frac = hundredths % 100;
+      return String(whole) + '.' + String(frac).padStart(2, '0') + ' ms';
+    }
+    function paintReceipt(receipt) {
+      panelReceipt.replaceChildren();
+      var rows = [
+        ['Kind', 'Deterministic document compiler'],
+        ['Compiler', api.COMPILER_VERSION],
+        ['Canon', api.CANON_VERSION],
+        ['Compiled at', receipt.compiledAt],
+        ['Compile time', formatElapsed(receipt.elapsed)],
+        ['Input SHA-256', hashField(receipt.hashStatus, receipt.inputSha256)],
+        ['Output SHA-256', hashField(receipt.hashStatus, receipt.outputSha256)],
+        ['Hash state', receipt.hashStatus],
+        ['Trace', api.TRACE_NOTE],
+        ['Serialization', api.SERIAL_NOTE]
+      ];
+      var list = document.createElement('dl');
+      rows.forEach(function (row) {
+        var dt = document.createElement('dt');
+        dt.textContent = row[0];
+        var dd = document.createElement('dd');
+        dd.textContent = row[1];
+        list.appendChild(dt);
+        list.appendChild(dd);
+      });
+      panelReceipt.appendChild(list);
+    }
+    function clearInspector() {
+      panelSource.replaceChildren();
+      var waiting = document.createElement('p');
+      waiting.textContent = 'No source mapping is on screen.';
+      panelSource.appendChild(waiting);
+      panelMissing.replaceChildren();
+      var missing = document.createElement('p');
+      missing.textContent = 'No missing-information list is on screen.';
+      panelMissing.appendChild(missing);
+      panelReceipt.replaceChildren();
+      var receipt = document.createElement('p');
+      receipt.textContent = 'No receipt. Generate a valid pack to record a run.';
+      panelReceipt.appendChild(receipt);
+      countsEl.textContent = '';
+    }
+    function fillCounts(counts) {
+      countsEl.textContent = counts.lineItems + ' line items · ' + counts.sources + ' source rows · ' + counts.facts + ' facts · ' + counts.questions + ' questions';
+    }
+    function selectPresetButtons(name) {
+      presetNames.forEach(function (preset) {
+        hook('preset-' + preset).setAttribute('aria-pressed', preset === name ? 'true' : 'false');
+      });
+    }
+    function nowMs() {
+      if (typeof performance !== 'undefined' && performance && typeof performance.now === 'function') return performance.now();
+      return Date.now();
+    }
+    function failRun(errors) {
+      packet = null;
+      stale = false;
+      displayedRun = 0;
+      setExports(false);
+      showStale(false);
+      showPending(false);
+      showError(errors);
+      clearCustomer();
+      clearInspector();
+      setState('error');
+    }
+    function discardTrace(runToken) {
+      if (displayedRun !== runToken) return;
+      setExports(false);
+      showPending(false);
+      if (stale) setState('stale');
+    }
+    function finishTrace(runToken, hashStatus, inputSha, outputSha, elapsed, compiledAt) {
+      var gate = api.settleTrace({ runToken: runToken, liveToken: liveToken, stale: stale, hashStatus: hashStatus });
+      if (!gate.accept) {
+        discardTrace(runToken);
+        return;
+      }
+      showPending(false);
+      paintReceipt({
+        hashStatus: hashStatus,
+        inputSha256: inputSha,
+        outputSha256: outputSha,
+        elapsed: elapsed,
+        compiledAt: compiledAt
+      });
+      if (gate.enableExports) {
+        setExports(true);
+        setState('fresh');
+      } else {
+        setExports(false);
+      }
+    }
+    function touchSource() {
+      liveToken += 1;
+      clearStatus();
+      if (!packet) return;
+      stale = true;
+      setExports(false);
+      showStale(true);
+      showPending(false);
+      setState('stale');
+    }
+    function generate() {
+      setExports(false);
+      showPending(false);
+      clearStatus();
+      liveToken += 1;
+      var runToken = liveToken;
+      var parsed = api.parseEstimateJson(editor.value);
+      if (runToken !== liveToken) return;
+      if (!parsed.ok) {
+        failRun(parsed.errors);
+        return;
+      }
+      var started = nowMs();
+      var result = api.compileEstimate(parsed.value);
+      var elapsed = nowMs() - started;
+      if (runToken !== liveToken) return;
+      if (!result.ok) {
+        failRun(result.errors);
+        return;
+      }
+      packet = result;
+      stale = false;
+      displayedRun = runToken;
+      showError(null);
+      showStale(false);
+      fillCustomer(result.customer);
+      fillMappings(result.inspector);
+      fillMissing(result.customer.questions);
+      fillCounts(result.inspector.counts);
+      var compiledAt = new Date().toISOString();
+      paintReceipt({ hashStatus: 'pending', inputSha256: null, outputSha256: null, elapsed: elapsed, compiledAt: compiledAt });
+      setState('pending');
+      if (api.webCryptoStatus() !== 'available') {
+        finishTrace(runToken, 'unavailable', null, null, elapsed, compiledAt);
+        return;
+      }
+      showPending(true);
+      var inputHex = null;
+      api.sha256Hex(api.inputHashMaterial(result.inputSnapshot)).then(function (hex) {
+        inputHex = hex;
+        if (runToken !== liveToken || stale) {
+          discardTrace(runToken);
+          return null;
+        }
+        return api.sha256Hex(api.outputHashMaterial(result.customer));
+      }).then(function (outputHex) {
+        if (outputHex == null) return;
+        finishTrace(runToken, 'ready', inputHex, outputHex, elapsed, compiledAt);
+      }).catch(function (error) {
+        finishTrace(runToken, api.classifyHashFailure(error), null, null, elapsed, compiledAt);
+      });
+    }
+    function fallbackCopy(text) {
+      var area = document.createElement('textarea');
+      area.value = text;
+      area.setAttribute('readonly', 'readonly');
+      area.style.position = 'fixed';
+      area.style.left = '-9999px';
+      document.body.appendChild(area);
+      area.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (error) { ok = false; }
+      area.remove();
+      actionStatus.textContent = ok
+        ? 'Copied the customer pack.'
+        : 'Copy failed in this browser. Select the customer page and copy it manually.';
+    }
+    function onCopy() {
+      if (!exportsReady || !packet) return;
+      var text = api.renderCustomerText(packet.customer);
+      if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(text).then(function () {
+          actionStatus.textContent = 'Copied the customer pack.';
+        }).catch(function () { fallbackCopy(text); });
+        return;
+      }
+      fallbackCopy(text);
+    }
+    function onDownload(kind) {
+      if (!exportsReady || !packet) return;
+      var json = kind === 'json';
+      var content = json ? api.customerJsonFile(packet.customer) : api.renderCustomerHtml(packet.customer);
+      var blob = new Blob([content], { type: json ? 'application/json;charset=utf-8' : 'text/html;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      if (lastUrl) URL.revokeObjectURL(lastUrl);
+      lastUrl = url;
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = api.downloadName(packet.customer.quoteId, json ? 'json' : 'html');
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      actionStatus.textContent = json ? 'Downloaded the customer JSON file.' : 'Downloaded the customer HTML file.';
+    }
+    function onPrint() {
+      if (!exportsReady || !packet) return;
+      if (typeof window.print !== 'function') {
+        actionStatus.textContent = 'Print is unavailable in this browser.';
+        return;
+      }
+      window.print();
+    }
+    function applyPreset(name) {
+      selectPresetButtons(name);
+      editor.value = JSON.stringify(api.PRESETS[name], null, 2);
+      touchSource();
+    }
+    editor.addEventListener('input', function () {
+      selectPresetButtons(null);
+      touchSource();
+    });
+    hook('generate').addEventListener('click', generate);
+    hook('reset').addEventListener('click', function () {
+      selectPresetButtons('door');
+      editor.value = JSON.stringify(api.PRESETS.door, null, 2);
+      generate();
+    });
+    hook('copy').addEventListener('click', onCopy);
+    hook('export-html').addEventListener('click', function () { onDownload('html'); });
+    hook('export-json').addEventListener('click', function () { onDownload('json'); });
+    hook('print').addEventListener('click', onPrint);
+    presetNames.forEach(function (name) {
+      hook('preset-' + name).addEventListener('click', function () { applyPreset(name); });
+    });
+    hook('import').addEventListener('change', function (event) {
+      var input = event.target;
+      var file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = typeof reader.result === 'string' ? reader.result : '';
+        if (text.length > api.MAX_SOURCE_CHARS) {
+          actionStatus.textContent = 'That file is longer than the limit. The editor was left unchanged.';
+          return;
+        }
+        editor.value = text.replace(/^\uFEFF/, '');
+        selectPresetButtons(null);
+        touchSource();
+      };
+      reader.onerror = function () {
+        actionStatus.textContent = 'The file could not be read. The editor was left unchanged.';
+      };
+      reader.readAsText(file);
+    });
+    var tabNames = ['source', 'missing', 'receipt'];
+    function selectTab(name) {
+      tabNames.forEach(function (tabName) {
+        var tab = document.getElementById('tab-' + tabName);
+        var panel = document.getElementById('panel-' + tabName);
+        var on = tabName === name;
+        tab.setAttribute('aria-selected', on ? 'true' : 'false');
+        tab.tabIndex = on ? 0 : -1;
+        panel.hidden = !on;
+      });
+    }
+    tabNames.forEach(function (name) {
+      document.getElementById('tab-' + name).addEventListener('click', function () { selectTab(name); });
+    });
+    document.querySelector('.tabs').addEventListener('keydown', function (event) {
+      var current = tabNames.indexOf(document.activeElement && document.activeElement.id.replace('tab-', ''));
+      if (current < 0) return;
+      var next = current;
+      if (event.key === 'ArrowRight') next = (current + 1) % tabNames.length;
+      else if (event.key === 'ArrowLeft') next = (current - 1 + tabNames.length) % tabNames.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabNames.length - 1;
+      else return;
+      event.preventDefault();
+      selectTab(tabNames[next]);
+      document.getElementById('tab-' + tabNames[next]).focus();
+    });
+    setExports(false);
+    selectPresetButtons('door');
+    editor.value = JSON.stringify(api.PRESETS.door, null, 2);
+    generate();
+  }
+
+  if (typeof document !== 'undefined' && document.getElementById && document.getElementById('customer-view')) boot();
+})();
+</script>
+</body>
+</html>
