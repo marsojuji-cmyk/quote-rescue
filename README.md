@@ -1,6 +1,6 @@
 # Quote Rescue
 
-**A local-first quote-to-decision-pack compiler.** Structured estimate in → validated source facts → a customer decision pack that says *"I don't know"* where the source was silent.
+**A local-first quote-to-decision-pack compiler.** Structured estimate in → validated source facts → a customer decision pack. A quote that silently assumes warranty terms is how disputes start — so where the source was silent, the pack says *"I don't know"*: never invented promises.
 
 Built by Marcus Richards in Calgary. No LLM runs inside the browser — the compiler is deterministic, offline, and inspectable.
 
